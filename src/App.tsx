@@ -2,6 +2,7 @@ import { Download, FileSearch, Search, ShieldCheck, SlidersHorizontal, Undo2 } f
 import { useEffect, useMemo, useState } from 'react'
 import { ChangeLogPanel } from './components/ChangeLogPanel'
 import { ExportDialog } from './components/ExportDialog'
+import { FieldHelpPanel } from './components/FieldHelpPanel'
 import { FileUploadPanel } from './components/FileUploadPanel'
 import { MissingLocalizationPanel } from './components/MissingLocalizationPanel'
 import { SectionDetail } from './components/SectionDetail'
@@ -74,31 +75,40 @@ function App() {
   return (
     <main className="workspace">
       <SidebarNav document={document} activeView={activeView} onChange={setActiveView} />
+
       <section className="work-area">
         <header className="topbar">
-          <div>
+          <div className="topbar-title">
             <p className="eyebrow">MO RULESMITH</p>
-            <h1>心灵终结规则工坊</h1>
+            <h1>规则编辑工作台</h1>
           </div>
-          <div className="file-stats">
-            <span>{stats?.fileName}</span>
-            <span>{formatBytes(stats?.fileSize ?? 0)}</span>
-            <span>{stats?.totalLines.toLocaleString()} 行</span>
-            <span>{stats?.sectionCount.toLocaleString()} 段</span>
-            <span>{stats?.keyValueCount.toLocaleString()} 键值</span>
-            {stats?.looksLikeRulesMo && (
-              <strong>
-                <ShieldCheck size={14} />
-                rulesmo 特征
-              </strong>
-            )}
-          </div>
-          <div className="top-actions">
+
+          <div className="topbar-center">
+            <div className="file-stats" title={stats?.fileName}>
+              <span>{stats?.fileName}</span>
+              <span>{formatBytes(stats?.fileSize ?? 0)}</span>
+              <span>{stats?.totalLines.toLocaleString()} 行</span>
+              <span>{stats?.sectionCount.toLocaleString()} 段</span>
+              <span>{stats?.keyValueCount.toLocaleString()} 键值</span>
+              {stats?.looksLikeRulesMo && (
+                <strong>
+                  <ShieldCheck size={14} />
+                  rulesmo
+                </strong>
+              )}
+            </div>
             <div className="search-box">
               <Search size={17} />
-              <input placeholder="搜索 CNTR / 百夫长 / 血量 / 开火间隔" value={draftQuery} onChange={(event) => setDraftQuery(event.target.value)} />
+              <input
+                placeholder="搜索 CNTR、百夫长、血量、Primary..."
+                value={draftQuery}
+                onChange={(event) => setDraftQuery(event.target.value)}
+              />
             </div>
-            <button type="button" onClick={clearChanges}>
+          </div>
+
+          <div className="top-actions">
+            <button type="button" title="撤销全部修改" onClick={clearChanges}>
               <Undo2 size={16} />
               全部撤销
             </button>
@@ -109,12 +119,13 @@ function App() {
           </div>
         </header>
 
-        <section className="preset-strip">
+        <section className="preset-strip" aria-label="预设工具">
           <SlidersHorizontal size={16} />
           {presets.map((preset) => (
             <button
               key={preset.id}
               type="button"
+              title={preset.description}
               onClick={() => setPresetPreview({ name: preset.name, changes: preset.buildChanges(document) })}
             >
               {preset.name}
@@ -153,21 +164,24 @@ function App() {
               document={document}
               sectionName={selectedSection}
               focusedEntry={selectedEntry}
+              changes={changes}
               onFocusEntry={setFocusedEntry}
               onUpdateEntry={updateEntry}
               onRevertEntry={revertEntry}
               onDeleteEntry={deleteEntry}
               onAddEntry={addEntry}
+              onUndoChange={undoChange}
               onJump={selectSection}
             />
           </section>
         )}
 
         <footer className="app-footer">
-          MO Rulesmith 是一个非官方 Mod 配置辅助工具。本工具不包含、不分发任何 Mental Omega 或 Command &amp; Conquer 游戏资源。请在修改
-          rulesmo.ini 前备份原文件。错误修改可能导致游戏崩溃、战役异常或平衡变化。
+          本地解析与导出。修改 rulesmo.ini 前请保留原文件备份，错误配置可能导致游戏异常或平衡变化。
         </footer>
       </section>
+
+      <FieldHelpPanel document={document} entry={selectedEntry} />
 
       <ExportDialog open={exportOpen} document={document} changes={changes} onClose={() => setExportOpen(false)} />
 
@@ -175,7 +189,7 @@ function App() {
         <div className="modal-backdrop">
           <section className="export-dialog">
             <h2>{presetPreview.name}</h2>
-            <p className="muted">预设应用前必须确认。下面是将要修改的字段：</p>
+            <p className="muted">预设应用前需要确认。下面是即将修改的字段：</p>
             <div className="issue-list">
               {presetPreview.changes.slice(0, 80).map((change) => (
                 <p key={`${change.sectionName}-${change.key}`}>
