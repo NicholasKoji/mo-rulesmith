@@ -10,6 +10,7 @@ import {
   Crosshair,
   FileCog,
   History,
+  Languages,
   Plane,
   Shield,
   Sparkles,
@@ -17,6 +18,7 @@ import {
   Zap,
 } from 'lucide-react'
 import { sectionTypeLabels } from '../lib/classifySections'
+import { getMissingLocalizationItems } from '../lib/displayName'
 import type { ActiveView } from '../store/useIniStore'
 import type { IniDocument, SectionType } from '../lib/types'
 
@@ -34,6 +36,7 @@ const order: ActiveView[] = [
   'AI',
   'General',
   'Unknown',
+  'MissingLocalization',
   'Changes',
 ]
 
@@ -51,7 +54,13 @@ const icons: Record<string, typeof FileCog> = {
   AI: Bot,
   General: FileCog,
   Unknown: Archive,
+  MissingLocalization: Languages,
   Changes: History,
+}
+
+const viewLabels: Record<ActiveView, string> = {
+  ...sectionTypeLabels,
+  MissingLocalization: '缺失语言项',
 }
 
 export function SidebarNav({
@@ -69,6 +78,7 @@ export function SidebarNav({
     return acc
   }, {})
   counts.Changes = document.lines.filter((line) => line.modified || line.deleted || line.added).length
+  counts.MissingLocalization = getMissingLocalizationItems(document).length
 
   return (
     <nav className="sidebar">
@@ -89,7 +99,7 @@ export function SidebarNav({
             onClick={() => onChange(view)}
           >
             <Icon size={17} />
-            <span>{sectionTypeLabels[view as SectionType] ?? sectionTypeLabels[view]}</span>
+            <span>{viewLabels[view] ?? sectionTypeLabels[view as SectionType]}</span>
             <b>{counts[view] ?? 0}</b>
           </button>
         )

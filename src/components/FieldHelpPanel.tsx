@@ -1,10 +1,12 @@
 import { BookOpen, ShieldAlert } from 'lucide-react'
+import { resolveStringLabel } from '../data/moLocalization.zhCN'
 import { getFieldDoc } from '../lib/fieldDocs'
-import type { IniEntry } from '../lib/types'
+import { getEntry } from '../lib/iniParser'
+import type { IniDocument, IniEntry } from '../lib/types'
 import { RiskBadge } from './RiskBadge'
 import { ValueStrengthBadge } from './ValueStrengthBadge'
 
-export function FieldHelpPanel({ entry }: { entry?: IniEntry }) {
+export function FieldHelpPanel({ document, entry }: { document?: IniDocument; entry?: IniEntry }) {
   if (!entry) {
     return (
       <aside className="help-panel">
@@ -16,6 +18,10 @@ export function FieldHelpPanel({ entry }: { entry?: IniEntry }) {
   }
 
   const doc = getFieldDoc(entry.key)
+  const isUiName = entry.key.toLowerCase() === 'uiname'
+  const localizedName = isUiName ? resolveStringLabel(entry.currentValue) : undefined
+  const fallbackName = document ? getEntry(document, entry.sectionName, 'Name')?.currentValue ?? entry.sectionName : entry.sectionName
+
   return (
     <aside className="help-panel">
       <div className="help-heading">
@@ -33,6 +39,12 @@ export function FieldHelpPanel({ entry }: { entry?: IniEntry }) {
         <dd>{doc.description}</dd>
         <dt>当前值</dt>
         <dd className="mono">{entry.currentValue || '空值'}</dd>
+        {isUiName && (
+          <>
+            <dt>解析结果</dt>
+            <dd>{localizedName ?? `未找到中文映射，当前使用 ${fallbackName} 兜底`}</dd>
+          </>
+        )}
         <dt>强弱判断</dt>
         <dd>
           <ValueStrengthBadge fieldKey={entry.key} value={entry.currentValue} />

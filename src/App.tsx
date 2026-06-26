@@ -3,13 +3,15 @@ import { useEffect, useMemo, useState } from 'react'
 import { ChangeLogPanel } from './components/ChangeLogPanel'
 import { ExportDialog } from './components/ExportDialog'
 import { FileUploadPanel } from './components/FileUploadPanel'
+import { MissingLocalizationPanel } from './components/MissingLocalizationPanel'
 import { SectionDetail } from './components/SectionDetail'
 import { SectionTable } from './components/SectionTable'
 import { SidebarNav } from './components/SidebarNav'
+import { getDisplaySubtitle, getSectionDisplayInfo } from './lib/displayName'
 import { downloadText } from './lib/iniExporter'
 import { getEntry } from './lib/iniParser'
 import { presets } from './lib/presets'
-import type { IniEntry, PresetChange } from './lib/types'
+import type { IniDocument, IniEntry, PresetChange, SearchResult } from './lib/types'
 import { useIniStore } from './store/useIniStore'
 
 function App() {
@@ -127,11 +129,7 @@ function App() {
             </div>
             <div className="result-row-wrap">
               {searchResults.slice(0, 40).map((result) => (
-                <button key={result.id} type="button" onClick={() => selectSection(result.sectionName)}>
-                  <span>{result.type}</span>
-                  <strong>{result.sectionName}</strong>
-                  {result.key && <code>{result.key}={result.value}</code>}
-                </button>
+                <SearchResultButton key={result.id} document={document} result={result} onSelect={selectSection} />
               ))}
             </div>
           </section>
@@ -144,6 +142,8 @@ function App() {
             onExportJson={() => exportSidecar('mo-rulesmith.changes.json', exportChangesJson())}
             onExportMarkdown={() => exportSidecar('mo-rulesmith.changes.md', exportChangesMarkdown())}
           />
+        ) : activeView === 'MissingLocalization' ? (
+          <MissingLocalizationPanel document={document} onJump={selectSection} />
         ) : (
           <section className="content-grid">
             <SectionTable document={document} activeView={activeView} selectedSection={selectedSection} onSelect={selectSection} />
@@ -204,6 +204,29 @@ function App() {
         </div>
       )}
     </main>
+  )
+}
+
+function SearchResultButton({
+  document,
+  result,
+  onSelect,
+}: {
+  document: IniDocument
+  result: SearchResult
+  onSelect: (sectionName: string) => void
+}) {
+  const section = document.sectionsByName.get(result.sectionName)
+  const display = section ? getSectionDisplayInfo(section) : undefined
+  const subtitle = display ? getDisplaySubtitle(display) : result.sectionName
+
+  return (
+    <button type="button" onClick={() => onSelect(result.sectionName)} title={result.reason}>
+      <span>{result.type}</span>
+      <strong>{display?.displayName ?? result.sectionName}</strong>
+      <small>{subtitle}</small>
+      {result.key && <code>{result.key}={result.value}</code>}
+    </button>
   )
 }
 

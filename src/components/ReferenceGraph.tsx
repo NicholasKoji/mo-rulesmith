@@ -1,4 +1,5 @@
 import { Link2 } from 'lucide-react'
+import { getReferenceDisplayLabel } from '../lib/displayName'
 import { buildReferenceTree } from '../lib/references'
 import type { IniDocument } from '../lib/types'
 
@@ -26,7 +27,7 @@ export function ReferenceGraph({
           {tree.map((link) => (
             <li key={`${link.sourceKey}-${link.targetSection}`}>
               <button type="button" className={link.exists ? 'ref-link' : 'ref-missing'} onClick={() => link.exists && onJump(link.targetSection)}>
-                {link.sourceKey}: {link.targetSection}
+                {link.sourceKey}: {getReferenceDisplayLabel(document, link.targetSection)}
               </button>
               {link.children.length > 0 && (
                 <ul>
@@ -37,7 +38,7 @@ export function ReferenceGraph({
                         className={child.exists ? 'ref-link' : 'ref-missing'}
                         onClick={() => child.exists && onJump(child.targetSection)}
                       >
-                        {child.sourceKey}: {child.targetSection}
+                        {child.sourceKey}: {getReferenceDisplayLabel(document, child.targetSection)}
                       </button>
                     </li>
                   ))}

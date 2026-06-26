@@ -9,6 +9,8 @@ const unitWeaponKeys = new Set([
   'DeathWeapon',
   'DeployFireWeapon',
   'OpenTransportWeapon',
+  'SuperWeapon',
+  'SuperWeapon2',
 ])
 
 const projectileWeaponKeys = new Set(['AirburstWeapon', 'Splits', 'Cluster'])

@@ -1,5 +1,6 @@
 import { getAllFieldDocs } from './fieldDocs'
 import { sectionTypeLabels } from './classifySections'
+import { getSectionSearchText } from './displayName'
 import type { IniDocument, SearchResult } from './types'
 
 const docs = getAllFieldDocs()
@@ -20,13 +21,14 @@ export function searchDocument(document: IniDocument, query: string, limit = 200
   for (const section of document.sections) {
     if (results.length >= limit) break
     const typeLabel = sectionTypeLabels[section.type].toLowerCase()
-    if (section.name.toLowerCase().includes(q) || typeLabel.includes(q)) {
+    const sectionHaystack = `${typeLabel} ${getSectionSearchText(section)}`
+    if (sectionHaystack.includes(q)) {
       results.push({
         id: `section-${section.name}`,
         type: section.type,
         sectionName: section.name,
         lineNumber: section.startLine,
-        reason: 'Section / 类型命中',
+        reason: 'Section / 显示名 / 类型命中',
       })
     }
 

@@ -1,5 +1,6 @@
 import { Plus, RotateCcw } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { getSectionDisplayInfo } from '../lib/displayName'
 import { getEntry } from '../lib/iniParser'
 import { getWarheadArmorRows } from '../lib/references'
 import { analyzePercent } from '../lib/valueAnalysis'
@@ -53,6 +54,7 @@ export function SectionDetail({
   }
 
   const armorRows = section.type === 'Warhead' ? getWarheadArmorRows(document, section.name) : []
+  const display = getSectionDisplayInfo(section)
 
   return (
     <section className="detail-grid">
@@ -60,10 +62,28 @@ export function SectionDetail({
         <section className="object-card">
           <div>
             <p className="eyebrow">{section.type}</p>
-            <h2>{section.name}</h2>
+            <h2 title={display.displayName}>{display.displayName}</h2>
             <span className="muted">
               行 {section.startLine.toLocaleString()} - {section.endLine.toLocaleString()} · {section.entries.length} 字段
             </span>
+          </div>
+          <div className="identity-grid">
+            <div>
+              <span>Section ID</span>
+              <strong className="mono">{section.name}</strong>
+            </div>
+            <div>
+              <span>UIName</span>
+              <strong className="mono">{display.uiName ?? '—'}</strong>
+            </div>
+            <div>
+              <span>Name</span>
+              <strong>{display.rawName ?? '—'}</strong>
+            </div>
+            <div>
+              <span>类型</span>
+              <strong>{section.type}</strong>
+            </div>
           </div>
           <div className="summary-grid">
             {summaryFields.map((entry) => (
@@ -154,7 +174,7 @@ export function SectionDetail({
         <RawPreview document={document} sectionName={section.name} />
       </div>
 
-      <FieldHelpPanel entry={effectiveFocused} />
+      <FieldHelpPanel document={document} entry={effectiveFocused} />
     </section>
   )
 }

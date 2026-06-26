@@ -381,7 +381,8 @@ tr.selected td {
 .raw-preview,
 .help-panel,
 .change-log,
-.armor-table {
+.armor-table,
+.missing-localization {
   border: 1px solid var(--line);
   background: rgba(17, 22, 26, 0.88);
   border-radius: 8px;
@@ -433,6 +434,10 @@ tr.selected td {
   overflow: auto;
 }
 
+.display-name-cell {
+  min-width: 190px;
+}
+
 .detail-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 310px;
@@ -448,6 +453,43 @@ tr.selected td {
 
 .object-card {
   padding: 14px;
+}
+
+.object-card h2 {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.identity-grid {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 8px;
+}
+
+.identity-grid div {
+  min-height: 58px;
+  border: 1px solid rgba(44, 57, 63, 0.86);
+  background: #0d1317;
+  border-radius: 7px;
+  padding: 8px;
+}
+
+.identity-grid span,
+.display-name-cell span {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.identity-grid strong,
+.display-name-cell strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .summary-grid {
@@ -704,10 +746,32 @@ tr.selected td {
 .result-row-wrap button {
   justify-content: flex-start;
   min-width: 260px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  text-align: left;
 }
 
 .result-row-wrap span {
   color: var(--blue);
+}
+
+.result-row-wrap strong,
+.result-row-wrap small,
+.result-row-wrap code {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.result-row-wrap small,
+.result-row-wrap code {
+  grid-column: 1 / -1;
+}
+
+.result-row-wrap small {
+  color: var(--muted);
 }
 
 .change-log {
@@ -740,6 +804,20 @@ tr.selected td {
 .detail-empty {
   color: var(--muted);
   padding: 22px;
+}
+
+.empty-state-line {
+  min-height: 220px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  color: var(--green);
+}
+
+.missing-table-scroll {
+  max-height: calc(100svh - 170px);
+  overflow: auto;
 }
 
 .detail-empty {

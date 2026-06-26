@@ -5,7 +5,7 @@ import { buildDocumentFromLines, getEntry, parseIni } from '../lib/iniParser'
 import { searchDocument } from '../lib/search'
 import type { IniChange, IniDocument, IniEntry, IniLine, PresetChange, SearchResult, SectionType } from '../lib/types'
 
-export type ActiveView = SectionType | 'All' | 'Changes'
+export type ActiveView = SectionType | 'All' | 'Changes' | 'MissingLocalization'
 
 interface IniState {
   document?: IniDocument
