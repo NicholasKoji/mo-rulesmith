@@ -8,6 +8,7 @@ import { SectionDetail } from './components/SectionDetail'
 import { SectionTable } from './components/SectionTable'
 import { SidebarNav } from './components/SidebarNav'
 import { getDisplaySubtitle, getSectionDisplayInfo } from './lib/displayName'
+import { getFieldLabel } from './lib/fieldDocs'
 import { downloadText } from './lib/iniExporter'
 import { getEntry } from './lib/iniParser'
 import { presets } from './lib/presets'
@@ -95,7 +96,7 @@ function App() {
           <div className="top-actions">
             <div className="search-box">
               <Search size={17} />
-              <input placeholder="搜索 CNTR / Speed / Damage / 注释" value={draftQuery} onChange={(event) => setDraftQuery(event.target.value)} />
+              <input placeholder="搜索 CNTR / 百夫长 / 血量 / 开火间隔" value={draftQuery} onChange={(event) => setDraftQuery(event.target.value)} />
             </div>
             <button type="button" onClick={clearChanges}>
               <Undo2 size={16} />
@@ -137,6 +138,7 @@ function App() {
 
         {activeView === 'Changes' ? (
           <ChangeLogPanel
+            document={document}
             changes={changes}
             onUndo={undoChange}
             onExportJson={() => exportSidecar('mo-rulesmith.changes.json', exportChangesJson())}
@@ -225,7 +227,11 @@ function SearchResultButton({
       <span>{result.type}</span>
       <strong>{display?.displayName ?? result.sectionName}</strong>
       <small>{subtitle}</small>
-      {result.key && <code>{result.key}={result.value}</code>}
+      {result.key && (
+        <code>
+          {getFieldLabel(result.key)} {result.key}={result.value}
+        </code>
+      )}
     </button>
   )
 }

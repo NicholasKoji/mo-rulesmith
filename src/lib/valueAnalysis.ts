@@ -1,3 +1,5 @@
+import { analyzeFieldValueZhCN } from '../data/moFieldLocalization.zhCN'
+
 export interface ValueAnalysis {
   label: string
   tone: 'muted' | 'good' | 'warn' | 'danger' | 'info'
@@ -19,6 +21,15 @@ function between(value: number, rules: Array<[number, string, ValueAnalysis['ton
 }
 
 export function analyzeValue(key: string, value?: string): ValueAnalysis {
+  const localizedAnalysis = analyzeFieldValueZhCN(key, value ?? '')
+  if (localizedAnalysis) {
+    return {
+      label: localizedAnalysis.label,
+      tone: mapLocalizedTone(localizedAnalysis.tone),
+      detail: localizedAnalysis.description,
+    }
+  }
+
   const n = numeric(value)
   if (Number.isNaN(n)) {
     if (/^(yes|true)$/i.test(value ?? '')) return { label: '启用', tone: 'info', detail: '布尔字段已启用。' }
@@ -90,6 +101,12 @@ export function analyzeValue(key: string, value?: string): ValueAnalysis {
   }
 
   return { label: '可编辑', tone: 'muted', detail: '暂无专用强弱规则。' }
+}
+
+function mapLocalizedTone(tone: 'neutral' | 'good' | 'warning' | 'danger'): ValueAnalysis['tone'] {
+  if (tone === 'neutral') return 'muted'
+  if (tone === 'warning') return 'warn'
+  return tone
 }
 
 export function analyzePercent(value: number): ValueAnalysis {

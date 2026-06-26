@@ -1,10 +1,12 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { getMissingLocalizationItems, getReferenceDisplayLabel, getSectionDisplayInfo } from '../src/lib/displayName'
+import { getFieldDoc } from '../src/lib/fieldDocs'
 import { exportIni } from '../src/lib/iniExporter'
 import { getEntry, parseIni } from '../src/lib/iniParser'
 import { getReferenceLinks } from '../src/lib/references'
 import { searchDocument } from '../src/lib/search'
+import { analyzeValue } from '../src/lib/valueAnalysis'
 
 const filePath = process.argv[2] ?? 'D:\\software\\Mental Omega\\rulesmo.ini'
 const text = readFileSync(resolve(filePath), 'utf8')
@@ -38,9 +40,25 @@ assert(searchDocument(document, 'CNTR').some((result) => result.sectionName === 
 const speed = getEntry(document, 'CNTR', 'Speed')
 assert(speed, 'missing CNTR.Speed')
 assert(speed.currentValue === '3', `expected CNTR.Speed=3, got ${speed.currentValue}`)
+assert(getFieldDoc('Strength').zhName === '血量', 'Strength should resolve to 血量')
+assert(getFieldDoc('Speed').zhName === '移动速度', 'Speed should resolve to 移动速度')
+assert(getFieldDoc('ROT').zhName === '车体转向速度', 'ROT should resolve to 车体转向速度')
+assert(getFieldDoc('ROF').zhName === '开火间隔', 'ROF should resolve to 开火间隔')
+const rofDoc = getFieldDoc('ROF')
+assert(
+  `${rofDoc.description} ${rofDoc.valueDirection}`.includes('越小'),
+  'ROF field doc should explain lower is faster',
+)
+assert(analyzeValue('Speed', speed.currentValue).label.includes('慢'), 'Speed=3 should produce a slow speed analysis')
+assert(searchDocument(document, '血量').some((result) => result.key === 'Strength'), 'Chinese field search did not find Strength fields')
+assert(searchDocument(document, '开火间隔').some((result) => result.key === 'ROF'), 'Chinese field search did not find ROF fields')
 
 const primary = getEntry(document, 'CNTR', 'Primary')
 assert(primary?.currentValue === 'CenturionCannon', `expected CNTR.Primary=CenturionCannon, got ${primary?.currentValue}`)
+assert(
+  getReferenceDisplayLabel(document, primary.currentValue).includes('百夫长加农炮'),
+  'Primary reference label should include CenturionCannon Chinese display name',
+)
 
 const cntrLinks = getReferenceLinks(document, 'CNTR')
 assert(cntrLinks.some((link) => link.targetSection === 'CenturionCannon' && link.exists), 'missing CNTR -> CenturionCannon link')
@@ -49,6 +67,13 @@ assert(getReferenceDisplayLabel(document, 'CNTR').includes('百夫长攻城机�
 const weaponLinks = getReferenceLinks(document, 'CenturionCannon')
 assert(weaponLinks.some((link) => link.targetSection === 'CenturionCannonBall' && link.exists), 'missing weapon -> projectile link')
 assert(weaponLinks.some((link) => link.targetSection === 'CenturionCannonWH' && link.exists), 'missing weapon -> warhead link')
+
+const cntrWarhead = document.sectionsByName.get('CenturionCannonWH')
+assert(cntrWarhead, 'missing [CenturionCannonWH]')
+const versusCntr = getEntry(document, 'CenturionCannonWH', 'Versus.cntr')
+if (versusCntr) {
+  assert(analyzeValue('Versus.cntr', '25%').label === '刮痧', 'Versus.cntr=25% should be analyzed as 刮痧')
+}
 
 const missingItems = getMissingLocalizationItems(document)
 assert(

@@ -2,34 +2,47 @@ import { getEntry } from './iniParser'
 import type { IniDocument, IniEntry, ReferenceLink, SectionType } from './types'
 
 const unitWeaponKeys = new Set([
-  'Primary',
-  'Secondary',
-  'ElitePrimary',
-  'EliteSecondary',
-  'DeathWeapon',
-  'DeployFireWeapon',
-  'OpenTransportWeapon',
-  'SuperWeapon',
-  'SuperWeapon2',
+  'primary',
+  'secondary',
+  'eliteprimary',
+  'elitesecondary',
+  'weapon',
+  'deathweapon',
+  'deployfireweapon',
+  'opentransportweapon',
+  'airburstweapon',
 ])
 
-const projectileWeaponKeys = new Set(['AirburstWeapon', 'Splits', 'Cluster'])
+const superWeaponKeys = new Set([
+  'superweapon',
+  'superweapon2',
+])
+
+const projectileWeaponKeys = new Set(['splits', 'cluster'])
+
+function normalizeKey(key: string) {
+  return key.trim().toLowerCase()
+}
 
 function inferTargetType(key: string): SectionType {
-  if (unitWeaponKeys.has(key) || projectileWeaponKeys.has(key)) return 'Weapon'
-  if (key === 'Projectile') return 'Projectile'
-  if (key === 'Warhead' || key === 'SW.Warhead') return 'Warhead'
-  if (key === 'SW.Animation') return 'Animation'
+  const normalized = normalizeKey(key)
+  if (unitWeaponKeys.has(normalized) || projectileWeaponKeys.has(normalized)) return 'Weapon'
+  if (superWeaponKeys.has(normalized)) return 'SuperWeapon'
+  if (normalized === 'projectile') return 'Projectile'
+  if (normalized === 'warhead' || normalized === 'sw.warhead') return 'Warhead'
+  if (normalized === 'sw.animation') return 'Animation'
   return 'Unknown'
 }
 
 export function isReferenceKey(key: string) {
+  const normalized = normalizeKey(key)
   return (
-    unitWeaponKeys.has(key) ||
-    projectileWeaponKeys.has(key) ||
-    key === 'Projectile' ||
-    key === 'Warhead' ||
-    key.startsWith('SW.')
+    unitWeaponKeys.has(normalized) ||
+    projectileWeaponKeys.has(normalized) ||
+    superWeaponKeys.has(normalized) ||
+    normalized === 'projectile' ||
+    normalized === 'warhead' ||
+    normalized.startsWith('sw.')
   )
 }
 

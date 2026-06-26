@@ -531,9 +531,32 @@ tr.selected td {
   min-width: 180px;
 }
 
+.field-table th:nth-child(5),
+.field-table td:nth-child(5) {
+  min-width: 220px;
+}
+
 .value-input {
   min-width: 160px;
   font-family: var(--mono);
+}
+
+.reference-value,
+.field-description {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.field-description {
+  max-width: 340px;
+}
+
+.value-analysis-detail {
+  margin: 6px 0 0;
+  color: var(--muted);
 }
 
 .modified-row td {
@@ -856,6 +879,11 @@ tr.selected td {
   display: flex;
   justify-content: space-between;
   gap: 12px;
+}
+
+.change-actions {
+  align-items: center;
+  margin-top: 10px;
 }
 
 .change-item span,

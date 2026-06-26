@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { classifyDocument } from '../lib/classifySections'
-import { getFieldRisk } from '../lib/fieldDocs'
+import { getSectionDisplayInfo } from '../lib/displayName'
+import { getFieldDoc, getFieldRisk } from '../lib/fieldDocs'
 import { buildDocumentFromLines, getEntry, parseIni } from '../lib/iniParser'
 import { searchDocument } from '../lib/search'
 import type { IniChange, IniDocument, IniEntry, IniLine, PresetChange, SearchResult, SectionType } from '../lib/types'
@@ -271,10 +272,12 @@ export const useIniStore = create<IniState>((set, get) => ({
     [
       '# MO Rulesmith 修改记录',
       '',
-      ...get().changes.map(
-        (change) =>
-          `- ${new Date(change.timestamp).toLocaleString()} ${change.sectionName}.${change.key} (${change.lineNumber}): ${change.previousValue} -> ${change.nextValue} [${change.risk}]`,
-      ),
+      ...get().changes.map((change) => {
+        const section = get().document?.sectionsByName.get(change.sectionName)
+        const sectionLabel = section ? getSectionDisplayInfo(section).displayName : change.sectionName
+        const fieldDoc = getFieldDoc(change.key)
+        return `- ${new Date(change.timestamp).toLocaleString()} ${sectionLabel} / ${change.sectionName} ${fieldDoc.zhName} ${change.key} (${change.lineNumber}): ${change.previousValue} -> ${change.nextValue} [${change.risk}]`
+      }),
       '',
     ].join('\n'),
 }))

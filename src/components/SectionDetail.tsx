@@ -1,6 +1,7 @@
 import { Plus, RotateCcw } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { getSectionDisplayInfo } from '../lib/displayName'
+import { getFieldLabel } from '../lib/fieldDocs'
 import { getEntry } from '../lib/iniParser'
 import { getWarheadArmorRows } from '../lib/references'
 import { analyzePercent } from '../lib/valueAnalysis'
@@ -88,7 +89,9 @@ export function SectionDetail({
           <div className="summary-grid">
             {summaryFields.map((entry) => (
               <div key={entry.id}>
-                <span>{entry.key}</span>
+                <span>
+                  {getFieldLabel(entry.key)} {entry.key}
+                </span>
                 <strong className="mono">{entry.currentValue}</strong>
               </div>
             ))}
@@ -110,10 +113,11 @@ export function SectionDetail({
             <table className="field-table">
               <thead>
                 <tr>
+                  <th>中文字段名</th>
                   <th>Key</th>
-                  <th>中文名</th>
                   <th>当前值</th>
                   <th>原始值</th>
+                  <th>说明</th>
                   <th>强弱</th>
                   <th>风险</th>
                   <th>操作</th>
@@ -123,6 +127,7 @@ export function SectionDetail({
                 {section.entries.map((entry) => (
                   <FieldEditorRow
                     key={entry.id}
+                    document={document}
                     entry={entry}
                     onFocus={() => onFocusEntry(entry)}
                     onChange={(value) => onUpdateEntry(entry.id, value)}

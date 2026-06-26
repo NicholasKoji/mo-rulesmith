@@ -1,8 +1,9 @@
 import clsx from 'clsx'
 import { ChevronsRight } from 'lucide-react'
 import { sectionTypeLabels } from '../lib/classifySections'
-import { getDisplaySubtitle, getSectionDisplayInfo } from '../lib/displayName'
+import { getDisplaySubtitle, getReferenceDisplayLabel, getSectionDisplayInfo } from '../lib/displayName'
 import { getEntry } from '../lib/iniParser'
+import { isReferenceKey, splitTargets } from '../lib/references'
 import type { ActiveView } from '../store/useIniStore'
 import type { IniDocument } from '../lib/types'
 
@@ -89,7 +90,7 @@ export function SectionTable({
                   <td title={rawName}>{rawName ?? '—'}</td>
                   {coreColumns.map((column) => (
                     <td key={column} title={getEntry(document, section.name, column)?.currentValue}>
-                      {getEntry(document, section.name, column)?.currentValue ?? '—'}
+                      {formatColumnValue(document, column, getEntry(document, section.name, column)?.currentValue)}
                     </td>
                   ))}
                   <td>
@@ -103,4 +104,12 @@ export function SectionTable({
       </div>
     </section>
   )
+}
+
+function formatColumnValue(document: IniDocument, key: string, value?: string) {
+  if (!value) return '—'
+  if (!isReferenceKey(key)) return value
+  return splitTargets(value)
+    .map((target) => getReferenceDisplayLabel(document, target))
+    .join(', ')
 }

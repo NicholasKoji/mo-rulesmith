@@ -9,7 +9,8 @@ MO Rulesmith（心灵终结规则工坊）是一个本地运行的静态网页�
 - 上传并在浏览器本地解析大型 `rulesmo.ini`，不上传到服务器。
 - 行级解析 INI，保留注释、空行、段落顺序、字段顺序和重复 Key。
 - 按步兵、载具、飞机、建筑、武器、弹头、抛射体、护甲、超级武器等分类浏览。
-- 搜索 Section、字段、值、注释和中文字段说明。
+- 内置中文本地化辅助数据，显示对象名称、字段中文名、字段说明和引用目标中文名。
+- 搜索 Section、对象中文名、字段、字段中文名、值、引用目标和注释。
 - 查看 Section 完整字段，直接编辑值，新增字段，注释化删除字段，恢复原值。
 - 查看字段中文解释、修改方向、建议范围、风险等级和数值强弱判断。
 - 支持单位到武器、武器到抛射体和弹头的引用跳转。
@@ -71,6 +72,9 @@ npm run build
 ## 技术说明
 
 - 技术栈：Vite、React、TypeScript、Tailwind CSS、Zustand、lucide-react。
+- 中文本地化数据只用于界面展示，不会写入 `rulesmo.ini`。如果某些名称或字段解释不准确，可以维护 `src/data/` 下的 TypeScript 文件：
+  - `moLocalization.zhCN.v2.ts`：对象、段落、单位、建筑、武器、弹头、抛射体等中文名。
+  - `moFieldLocalization.zhCN.ts`：字段中文名、字段说明、修改建议、风险等级和数值评价。
 - 核心逻辑位于 `src/lib/`：
   - `iniParser.ts`：行级 INI 解析。
   - `iniExporter.ts`：保真导出，只替换修改行。

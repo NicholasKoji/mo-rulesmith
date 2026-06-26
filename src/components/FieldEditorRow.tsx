@@ -1,11 +1,13 @@
 import { Copy, RotateCcw, Trash2 } from 'lucide-react'
+import { getReferenceDisplayLabel } from '../lib/displayName'
 import { getFieldDoc } from '../lib/fieldDocs'
-import { isReferenceKey } from '../lib/references'
-import type { IniEntry } from '../lib/types'
+import { isReferenceKey, splitTargets } from '../lib/references'
+import type { IniDocument, IniEntry } from '../lib/types'
 import { RiskBadge } from './RiskBadge'
 import { ValueStrengthBadge } from './ValueStrengthBadge'
 
 export function FieldEditorRow({
+  document,
   entry,
   onChange,
   onRevert,
@@ -13,6 +15,7 @@ export function FieldEditorRow({
   onJump,
   onFocus,
 }: {
+  document: IniDocument
   entry: IniEntry
   onChange: (value: string) => void
   onRevert: () => void
@@ -22,14 +25,17 @@ export function FieldEditorRow({
 }) {
   const doc = getFieldDoc(entry.key)
   const canJump = isReferenceKey(entry.key) && entry.currentValue
+  const referenceLabel = canJump ? formatReferenceValue(document, entry.currentValue) : undefined
 
   return (
     <tr className={entry.modified || entry.deleted || entry.added ? 'modified-row' : undefined} onFocus={onFocus}>
       <td>
+        <strong>{doc.zhName}</strong>
+      </td>
+      <td>
         <span className="mono strong">{entry.key}</span>
         {entry.isDuplicate && <small>#{entry.duplicateIndex}</small>}
       </td>
-      <td>{doc.zhName}</td>
       <td>
         <input
           className="value-input"
@@ -37,8 +43,12 @@ export function FieldEditorRow({
           disabled={entry.deleted}
           onChange={(event) => onChange(event.target.value)}
         />
+        {referenceLabel && <small className="reference-value">{referenceLabel}</small>}
       </td>
       <td className="muted mono">{entry.originalValue || '—'}</td>
+      <td className="field-description" title={doc.description}>
+        {doc.description}
+      </td>
       <td>
         <ValueStrengthBadge fieldKey={entry.key} value={entry.currentValue} />
       </td>
@@ -63,4 +73,10 @@ export function FieldEditorRow({
       </td>
     </tr>
   )
+}
+
+function formatReferenceValue(document: IniDocument, value: string) {
+  return splitTargets(value)
+    .map((target) => getReferenceDisplayLabel(document, target))
+    .join(', ')
 }

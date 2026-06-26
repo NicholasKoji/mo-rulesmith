@@ -1,13 +1,18 @@
 import { Download, RotateCcw } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import type { IniChange } from '../lib/types'
+import { getSectionDisplayInfo } from '../lib/displayName'
+import { getFieldDoc } from '../lib/fieldDocs'
+import type { IniChange, IniDocument } from '../lib/types'
+import { RiskBadge } from './RiskBadge'
 
 export function ChangeLogPanel({
+  document,
   changes,
   onUndo,
   onExportJson,
   onExportMarkdown,
 }: {
+  document: IniDocument
   changes: IniChange[]
   onUndo: (changeId: string) => void
   onExportJson: () => void
@@ -62,24 +67,46 @@ export function ChangeLogPanel({
       ) : (
         <div className="change-list">
           {filteredChanges.map((change) => (
-            <article key={change.id} className="change-item">
-              <div>
-                <strong>
-                  {change.sectionName}.{change.key}
-                </strong>
-                <span>{new Date(change.timestamp).toLocaleString()}</span>
-              </div>
-              <p>
-                <code>{change.previousValue || '空值'}</code> → <code>{change.nextValue || '空值'}</code>
-              </p>
-              <button type="button" onClick={() => onUndo(change.id)}>
-                <RotateCcw size={15} />
-                单项撤销
-              </button>
-            </article>
+            <ChangeLogItem key={change.id} document={document} change={change} onUndo={onUndo} />
           ))}
         </div>
       )}
     </section>
+  )
+}
+
+function ChangeLogItem({
+  document,
+  change,
+  onUndo,
+}: {
+  document: IniDocument
+  change: IniChange
+  onUndo: (changeId: string) => void
+}) {
+  const section = document.sectionsByName.get(change.sectionName)
+  const display = section ? getSectionDisplayInfo(section) : undefined
+  const doc = getFieldDoc(change.key)
+
+  return (
+    <article className="change-item">
+      <div>
+        <strong>
+          {display?.displayName ?? change.sectionName} / <span className="mono">{change.sectionName}</span>
+        </strong>
+        <span>{new Date(change.timestamp).toLocaleString()}</span>
+      </div>
+      <p>
+        {doc.zhName} <code>{change.key}</code>: <code>{change.previousValue || '空值'}</code> →{' '}
+        <code>{change.nextValue || '空值'}</code>
+      </p>
+      <div className="change-actions">
+        <RiskBadge risk={change.risk} />
+        <button type="button" onClick={() => onUndo(change.id)}>
+          <RotateCcw size={15} />
+          单项撤销
+        </button>
+      </div>
+    </article>
   )
 }

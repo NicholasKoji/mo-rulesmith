@@ -1,8 +1,9 @@
 import {
   getDisplaySearchText,
+  resolveDisplayNameBySectionId,
   resolveStringLabel,
   type DisplayNameResolvedBy,
-} from '../data/moLocalization.zhCN'
+} from '../data/moLocalization.zhCN.v2'
 import type { IniDocument, IniSection, SectionType } from './types'
 
 export interface SectionDisplayInfo {
@@ -49,6 +50,18 @@ export function getSectionDisplayInfo(section: IniSection): SectionDisplayInfo {
     }
   }
 
+  const localizedBySection = resolveDisplayNameBySectionId(section.name)
+  if (localizedBySection.displayName !== section.name) {
+    return {
+      sectionId: section.name,
+      type: section.type,
+      displayName: localizedBySection.displayName,
+      uiName: localizedBySection.uiName ?? uiName,
+      rawName: rawName ?? localizedBySection.rawName,
+      resolvedBy: localizedBySection.resolvedBy,
+    }
+  }
+
   if (rawName) {
     return {
       sectionId: section.name,
@@ -79,12 +92,15 @@ export function getDisplaySubtitle(info: SectionDisplayInfo) {
 }
 
 export function hasLocalizedDisplayName(info: SectionDisplayInfo) {
-  return info.resolvedBy === 'uiName' && info.displayName !== info.sectionId
+  return info.displayName !== info.sectionId
 }
 
 export function getReferenceDisplayLabel(document: IniDocument, targetSectionId: string) {
   const section = document.sectionsByName.get(targetSectionId)
-  if (!section) return targetSectionId
+  if (!section) {
+    const localizedBySection = resolveDisplayNameBySectionId(targetSectionId)
+    return localizedBySection.displayName !== targetSectionId ? `${targetSectionId} / ${localizedBySection.displayName}` : targetSectionId
+  }
 
   const info = getSectionDisplayInfo(section)
   if (!hasLocalizedDisplayName(info)) return targetSectionId

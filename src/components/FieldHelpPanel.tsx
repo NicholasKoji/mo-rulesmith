@@ -1,8 +1,11 @@
 import { BookOpen, ShieldAlert } from 'lucide-react'
-import { resolveStringLabel } from '../data/moLocalization.zhCN'
+import { resolveStringLabel } from '../data/moLocalization.zhCN.v2'
+import { getReferenceDisplayLabel } from '../lib/displayName'
 import { getFieldDoc } from '../lib/fieldDocs'
 import { getEntry } from '../lib/iniParser'
+import { isReferenceKey, splitTargets } from '../lib/references'
 import type { IniDocument, IniEntry } from '../lib/types'
+import { analyzeValue } from '../lib/valueAnalysis'
 import { RiskBadge } from './RiskBadge'
 import { ValueStrengthBadge } from './ValueStrengthBadge'
 
@@ -21,6 +24,13 @@ export function FieldHelpPanel({ document, entry }: { document?: IniDocument; en
   const isUiName = entry.key.toLowerCase() === 'uiname'
   const localizedName = isUiName ? resolveStringLabel(entry.currentValue) : undefined
   const fallbackName = document ? getEntry(document, entry.sectionName, 'Name')?.currentValue ?? entry.sectionName : entry.sectionName
+  const valueAnalysis = analyzeValue(entry.key, entry.currentValue)
+  const referenceTarget =
+    document && isReferenceKey(entry.key)
+      ? splitTargets(entry.currentValue)
+          .map((target) => getReferenceDisplayLabel(document, target))
+          .join(', ')
+      : undefined
 
   return (
     <aside className="help-panel">
@@ -39,15 +49,24 @@ export function FieldHelpPanel({ document, entry }: { document?: IniDocument; en
         <dd>{doc.description}</dd>
         <dt>当前值</dt>
         <dd className="mono">{entry.currentValue || '空值'}</dd>
+        <dt>原始值</dt>
+        <dd className="mono">{entry.originalValue || '空值'}</dd>
         {isUiName && (
           <>
             <dt>解析结果</dt>
             <dd>{localizedName ?? `未找到中文映射，当前使用 ${fallbackName} 兜底`}</dd>
           </>
         )}
+        {referenceTarget && (
+          <>
+            <dt>引用目标</dt>
+            <dd>{referenceTarget}</dd>
+          </>
+        )}
         <dt>强弱判断</dt>
         <dd>
           <ValueStrengthBadge fieldKey={entry.key} value={entry.currentValue} />
+          <p className="value-analysis-detail">{valueAnalysis.detail}</p>
         </dd>
         <dt>修改方向</dt>
         <dd>{doc.valueDirection}</dd>
