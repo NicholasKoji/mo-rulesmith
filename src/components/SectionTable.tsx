@@ -38,8 +38,6 @@ export function SectionTable({
     .filter((section) =>
       activeView === 'Changes' ? section.entries.some((entry) => entry.modified || entry.deleted || entry.added) : true,
     )
-  const columns = fieldsFor(activeView === 'All' || activeView === 'Changes' ? document.sectionsByName.get(selectedSection ?? '')?.type ?? 'Unknown' : activeView)
-  const coreColumns = columns.filter((column) => !['UIName', 'Name'].includes(column))
   const activeViewLabel = activeView === 'MissingLocalization' ? '缺失语言项' : sectionTypeLabels[activeView]
 
   return (
@@ -50,57 +48,42 @@ export function SectionTable({
           <strong>{sections.length.toLocaleString()} 个 Section</strong>
         </div>
       </div>
-      <div className="table-scroll">
-        <table>
-          <thead>
-            <tr>
-              <th>显示名</th>
-              <th>Section ID</th>
-              <th>类型</th>
-              <th>UIName</th>
-              <th>Name</th>
-              {coreColumns.map((column) => (
-                <th key={column}>{column}</th>
-              ))}
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {sections.map((section) => {
-              const display = getSectionDisplayInfo(section)
-              const subtitle = getDisplaySubtitle(display)
-              const uiName = getEntry(document, section.name, 'UIName')?.currentValue
-              const rawName = getEntry(document, section.name, 'Name')?.currentValue
+      <div className="object-list-scroll">
+        {sections.map((section) => {
+          const display = getSectionDisplayInfo(section)
+          const subtitle = getDisplaySubtitle(display)
+          const summaryFields = fieldsFor(section.type)
+            .filter((column) => !['UIName', 'Name'].includes(column))
+            .map((column) => ({
+              key: column,
+              value: getEntry(document, section.name, column)?.currentValue,
+            }))
+            .filter((item) => item.value)
+            .slice(0, 3)
+          const modified = section.entries.some((entry) => entry.modified || entry.deleted || entry.added)
 
-              return (
-                <tr
-                  key={section.name}
-                  className={clsx(selectedSection === section.name && 'selected')}
-                  onClick={() => onSelect(section.name)}
-                >
-                  <td className="display-name-cell" title={`${display.displayName}\n${subtitle}`}>
-                    <strong>{display.displayName}</strong>
-                    {subtitle && <span>{subtitle}</span>}
-                  </td>
-                  <td className="mono strong">{section.name}</td>
-                  <td>{sectionTypeLabels[section.type]}</td>
-                  <td className="mono" title={uiName}>
-                    {uiName ?? '—'}
-                  </td>
-                  <td title={rawName}>{rawName ?? '—'}</td>
-                  {coreColumns.map((column) => (
-                    <td key={column} title={getEntry(document, section.name, column)?.currentValue}>
-                      {formatColumnValue(document, column, getEntry(document, section.name, column)?.currentValue)}
-                    </td>
-                  ))}
-                  <td>
-                    <ChevronsRight size={16} />
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+          return (
+            <button
+              type="button"
+              key={section.name}
+              className={clsx('object-list-item', selectedSection === section.name && 'selected', modified && 'modified')}
+              onClick={() => onSelect(section.name)}
+              title={`${display.displayName}\n${subtitle}`}
+            >
+              <span className="object-list-name">{display.displayName}</span>
+              <span className="object-list-subtitle">
+                <code>{section.name}</code>
+                {display.rawName && <> · {display.rawName}</>}
+              </span>
+              <span className="object-list-summary">
+                {summaryFields.length > 0
+                  ? summaryFields.map((item) => `${item.key} ${formatColumnValue(document, item.key, item.value)}`).join(' · ')
+                  : sectionTypeLabels[section.type]}
+              </span>
+              <ChevronsRight size={15} />
+            </button>
+          )
+        })}
       </div>
     </section>
   )

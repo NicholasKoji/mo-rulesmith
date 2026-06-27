@@ -55,13 +55,15 @@ export function MissingLocalizationPanel({
                   </td>
                   <td title={item.rawName}>{item.rawName ?? '—'}</td>
                   <td title={item.suggestedDisplayName}>{item.suggestedDisplayName}</td>
-                  <td className="row-actions" onClick={(event) => event.stopPropagation()}>
-                    <button type="button" title="复制 UIName" onClick={() => navigator.clipboard.writeText(item.uiName)}>
-                      <Copy size={15} />
-                    </button>
-                    <button type="button" title="复制 Section ID" onClick={() => navigator.clipboard.writeText(item.sectionId)}>
-                      ID
-                    </button>
+                  <td className="actions-cell" onClick={(event) => event.stopPropagation()}>
+                    <div className="row-actions missing-row-actions">
+                      <button type="button" title="复制 UIName" onClick={() => navigator.clipboard.writeText(item.uiName)}>
+                        <Copy size={15} />
+                      </button>
+                      <button type="button" title="复制 Section ID" onClick={() => navigator.clipboard.writeText(item.sectionId)}>
+                        ID
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
