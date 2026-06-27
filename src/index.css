@@ -1810,13 +1810,17 @@ html {
   position: fixed;
   z-index: 30;
   width: min(360px, calc(100vw - 24px));
-  max-height: min(520px, calc(100svh - 24px));
-  overflow: auto;
+  height: auto;
+  max-height: calc(100svh - 24px);
+  overflow-x: hidden;
+  overflow-y: auto;
   border: 1px solid color-mix(in oklch, var(--blue) 34%, var(--line));
   border-radius: 8px;
   background: oklch(18% 0.018 180);
   box-shadow: var(--shadow);
   padding: 12px;
+  overscroll-behavior: contain;
+  overflow-wrap: anywhere;
 }
 
 .field-info-heading {
@@ -1841,10 +1845,18 @@ html {
   font-size: 13px;
 }
 
+.field-info-list dt,
+.field-info-list dd,
+.field-info-list .mono {
+  white-space: normal;
+  word-break: break-word;
+}
+
 .field-info-list p {
   margin-top: 4px;
   color: var(--muted);
   line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 
 .field-info-actions {
@@ -1852,6 +1864,11 @@ html {
   flex-wrap: wrap;
   gap: 8px;
   margin-top: 14px;
+}
+
+.field-info-actions button {
+  max-width: 100%;
+  min-width: 0;
 }
 
 @media (max-width: 1400px) {

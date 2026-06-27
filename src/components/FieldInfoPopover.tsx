@@ -29,17 +29,24 @@ export function FieldInfoPopover({ document: iniDocument, entry, anchor, onClose
   useLayoutEffect(() => {
     function place() {
       const rect = anchor.getBoundingClientRect()
-      const popoverWidth = 360
+      const popoverWidth = popoverRef.current?.offsetWidth ?? 360
+      const popoverHeight = popoverRef.current?.offsetHeight ?? 420
       const gap = 8
-      const left = Math.min(Math.max(12, rect.right + gap), window.innerWidth - popoverWidth - 12)
-      const top = Math.min(Math.max(12, rect.top - 12), window.innerHeight - 420)
+      const maxLeft = Math.max(12, window.innerWidth - popoverWidth - 12)
+      const maxTop = Math.max(12, window.innerHeight - popoverHeight - 12)
+      const left = Math.min(Math.max(12, rect.right + gap), maxLeft)
+      const top = Math.min(Math.max(12, rect.top - 12), maxTop)
       setPosition({ left, top })
     }
 
     place()
+    const popoverElement = popoverRef.current
+    const resizeObserver = popoverElement ? new ResizeObserver(place) : undefined
+    if (popoverElement) resizeObserver?.observe(popoverElement)
     window.addEventListener('resize', place)
     window.addEventListener('scroll', place, true)
     return () => {
+      resizeObserver?.disconnect()
       window.removeEventListener('resize', place)
       window.removeEventListener('scroll', place, true)
     }
