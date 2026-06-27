@@ -89,6 +89,37 @@ function recordChange(entry: IniEntry, previousValue: string, nextValue: string)
   }
 }
 
+function isSameEntryChange(change: IniChange, entry: IniEntry) {
+  return change.sectionName === entry.sectionName && change.key === entry.key && change.lineNumber === entry.lineNumber
+}
+
+function withoutEntryChanges(changes: IniChange[], entry: IniEntry) {
+  return changes.filter((change) => !isSameEntryChange(change, entry))
+}
+
+function upsertEntryChange(changes: IniChange[], entry: IniEntry, previousValue: string, nextValue: string) {
+  const firstMatchIndex = changes.findIndex((change) => isSameEntryChange(change, entry))
+  const existing = firstMatchIndex >= 0 ? changes[firstMatchIndex] : undefined
+  const shouldTrack = Boolean(entry.added || entry.deleted || nextValue !== entry.originalValue)
+  const remaining = withoutEntryChanges(changes, entry)
+
+  if (!shouldTrack) return remaining
+
+  const change: IniChange = {
+    ...(existing ?? recordChange(entry, previousValue, nextValue)),
+    timestamp: Date.now(),
+    originalValue: entry.originalValue,
+    previousValue: existing?.previousValue ?? previousValue,
+    nextValue,
+    risk: getFieldRisk(entry.key),
+  }
+
+  const insertAt = firstMatchIndex >= 0 ? Math.min(firstMatchIndex, remaining.length) : remaining.length
+  const nextChanges = [...remaining]
+  nextChanges.splice(insertAt, 0, change)
+  return nextChanges
+}
+
 function cloneDocument(document: IniDocument) {
   return { ...document, lines: [...document.lines], sections: [...document.sections] }
 }
@@ -154,9 +185,9 @@ export const useIniStore = create<IniState>((set, get) => ({
 
     const previousValue = entry.currentValue
     entry.currentValue = nextValue
-    entry.modified = entry.currentValue !== entry.originalValue || entry.deleted
+    entry.modified = entry.currentValue !== entry.originalValue || entry.deleted || entry.added
     entry.deleted = false
-    const changes = [...state.changes, recordChange(entry, previousValue, nextValue)]
+    const changes = upsertEntryChange(state.changes, entry, previousValue, nextValue)
     persistChanges(changes)
     set({ document, changes })
   },
@@ -171,18 +202,19 @@ export const useIniStore = create<IniState>((set, get) => ({
     if (entry.added) {
       document.lines = document.lines.filter((line) => line.id !== entry.id)
       document = refreshDocument(document)
+      const changes = withoutEntryChanges(state.changes, entry)
+      persistChanges(changes)
+      set({ document, changes })
+      return
     } else {
-      const previousValue = entry.currentValue
       entry.currentValue = entry.originalValue
       entry.modified = false
       entry.deleted = false
-      const changes = [...state.changes, recordChange(entry, previousValue, entry.originalValue)]
+      const changes = withoutEntryChanges(state.changes, entry)
       persistChanges(changes)
       set({ document, changes })
       return
     }
-
-    set({ document })
   },
 
   deleteEntry: (entryId) => {
@@ -194,7 +226,7 @@ export const useIniStore = create<IniState>((set, get) => ({
     const previousValue = entry.currentValue
     entry.deleted = true
     entry.modified = true
-    const changes = [...state.changes, recordChange(entry, previousValue, '[deleted]')]
+    const changes = upsertEntryChange(state.changes, entry, previousValue, '[deleted]')
     persistChanges(changes)
     set({ document, changes })
   },
@@ -225,7 +257,7 @@ export const useIniStore = create<IniState>((set, get) => ({
     document.lines.splice(section.endLine, 0, newLine)
     document = refreshDocument(document)
     const entry = getEntry(document, sectionName, key.trim())
-    const changes = entry ? [...state.changes, recordChange(entry, '', value)] : state.changes
+    const changes = entry ? upsertEntryChange(state.changes, entry, '', value) : state.changes
     persistChanges(changes)
     set({ document, changes })
   },
@@ -235,12 +267,22 @@ export const useIniStore = create<IniState>((set, get) => ({
     const change = state.changes.find((candidate) => candidate.id === changeId)
     const document = state.document
     if (!change || !document) return
-    const entry = document.sectionsByName
+    let nextDocument = cloneDocument(document)
+    const entry = nextDocument.sectionsByName
       .get(change.sectionName)
       ?.entries.find((candidate) => candidate.key === change.key && candidate.lineNumber === change.lineNumber)
     if (!entry) return
-    get().updateEntry(entry.id, change.previousValue)
-    set({ changes: get().changes.filter((candidate) => candidate.id !== changeId) })
+    if (entry.added) {
+      nextDocument.lines = nextDocument.lines.filter((line) => line.id !== entry.id)
+      nextDocument = refreshDocument(nextDocument)
+    } else {
+      entry.currentValue = change.previousValue
+      entry.deleted = false
+      entry.modified = entry.added || entry.currentValue !== entry.originalValue
+    }
+    const changes = withoutEntryChanges(state.changes, entry)
+    persistChanges(changes)
+    set({ document: nextDocument, changes })
   },
 
   clearChanges: () => {

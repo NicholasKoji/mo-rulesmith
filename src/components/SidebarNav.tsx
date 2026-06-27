@@ -11,6 +11,8 @@ import {
   FileCog,
   History,
   Languages,
+  PanelLeftClose,
+  PanelLeftOpen,
   Plane,
   Shield,
   Sparkles,
@@ -66,10 +68,14 @@ const viewLabels: Record<ActiveView, string> = {
 export function SidebarNav({
   document,
   activeView,
+  collapsed,
+  onToggleCollapsed,
   onChange,
 }: {
   document: IniDocument
   activeView: ActiveView
+  collapsed: boolean
+  onToggleCollapsed: () => void
   onChange: (view: ActiveView) => void
 }) {
   const counts = document.sections.reduce<Record<string, number>>((acc, section) => {
@@ -97,6 +103,7 @@ export function SidebarNav({
             key={view}
             className={clsx('nav-item', activeView === view && 'active')}
             onClick={() => onChange(view)}
+            title={viewLabels[view] ?? sectionTypeLabels[view as SectionType]}
           >
             <Icon size={17} />
             <span>{viewLabels[view] ?? sectionTypeLabels[view as SectionType]}</span>
@@ -104,6 +111,17 @@ export function SidebarNav({
           </button>
         )
       })}
+      <div className="sidebar-bottom">
+        <button
+          type="button"
+          className="sidebar-toggle"
+          title={collapsed ? '展开侧栏' : '折叠侧栏'}
+          onClick={onToggleCollapsed}
+        >
+          {collapsed ? <PanelLeftOpen size={15} /> : <PanelLeftClose size={15} />}
+          <span>{collapsed ? '展开侧栏' : '折叠侧栏'}</span>
+        </button>
+      </div>
     </nav>
   )
 }

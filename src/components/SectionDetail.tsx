@@ -1,9 +1,10 @@
 import clsx from 'clsx'
 import { GitBranch, History, ListChecks, Plus, RotateCcw, ScrollText } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import { getSectionDisplayInfo } from '../lib/displayName'
+import { getReferenceDisplayLabel, getSectionDisplayInfo } from '../lib/displayName'
 import { getFieldDoc, getFieldLabel } from '../lib/fieldDocs'
 import { getEntry } from '../lib/iniParser'
+import { isReferenceKey, splitTargets } from '../lib/references'
 import { getWarheadArmorRows } from '../lib/references'
 import { analyzePercent } from '../lib/valueAnalysis'
 import type { IniChange, IniDocument, IniEntry } from '../lib/types'
@@ -20,6 +21,8 @@ const detailTabs: Array<{ id: DetailTab; label: string; icon: typeof ListChecks 
   { id: 'raw', label: '原文', icon: ScrollText },
   { id: 'changes', label: '修改', icon: History },
 ]
+
+const headerFields = ['Strength', 'Cost', 'Speed', 'Armor', 'BuildLimit', 'Primary', 'Secondary', 'Damage', 'ROF', 'Range']
 
 export function SectionDetail({
   document,
@@ -55,7 +58,7 @@ export function SectionDetail({
 
   const summaryFields = useMemo(() => {
     if (!section) return []
-    return ['UIName', 'Name', 'Strength', 'Armor', 'Cost', 'TechLevel', 'Primary', 'Secondary', 'Speed', 'ROT', 'BuildLimit']
+    return headerFields
       .map((key) => getEntry(document, section.name, key))
       .filter(Boolean) as IniEntry[]
   }, [document, section])
@@ -77,7 +80,7 @@ export function SectionDetail({
     return (
       <section className="detail-empty">
         <img src="/assets/empty-state.png" alt="" />
-        <h2>从左侧选择一个对象，或搜索单位、武器、字段名称。</h2>
+        <h2>从左侧选择一个对象，或搜索单位、武器、字段名。</h2>
       </section>
     )
   }
@@ -88,47 +91,30 @@ export function SectionDetail({
   return (
     <section className="detail-grid">
       <div className="detail-main">
-        <section className="object-card">
-          <div className="object-heading">
+        <section className="object-card compact-object-card">
+          <div className="object-heading compact-object-heading">
             <div>
               <p className="eyebrow">{section.type}</p>
               <h2 title={display.displayName}>{display.displayName}</h2>
-              <span className="muted">
-                行 {section.startLine.toLocaleString()} - {section.endLine.toLocaleString()} · {section.entries.length} 字段
+              <span className="object-meta-line">
+                <code>{section.name}</code>
+                {display.rawName && <> · {display.rawName}</>}
+                <> · {section.entries.length} 字段 · 行 {section.startLine.toLocaleString()}-{section.endLine.toLocaleString()}</>
               </span>
             </div>
             <div className="object-status">
-              <span>{sectionChanges.length} 项修改</span>
-              <span>{summaryFields.length} 个关键字段</span>
+              <span>{sectionChanges.length} 修改</span>
+              <span>{summaryFields.length} 核心字段</span>
             </div>
           </div>
 
-          <div className="identity-grid">
-            <div>
-              <span>Section ID</span>
-              <strong className="mono">{section.name}</strong>
-            </div>
-            <div>
-              <span>UIName</span>
-              <strong className="mono">{display.uiName ?? '空值'}</strong>
-            </div>
-            <div>
-              <span>Name</span>
-              <strong>{display.rawName ?? '空值'}</strong>
-            </div>
-            <div>
-              <span>类型</span>
-              <strong>{section.type}</strong>
-            </div>
-          </div>
-
-          <div className="summary-grid">
-            {summaryFields.map((entry) => (
-              <div key={entry.id}>
-                <span>
-                  {getFieldLabel(entry.key)} {entry.key}
-                </span>
-                <strong className="mono">{entry.currentValue || '空值'}</strong>
+          <div className="compact-info-grid">
+            {summaryFields.slice(0, 8).map((entry) => (
+              <div key={entry.id} title={entry.currentValue}>
+                <span>{getFieldLabel(entry.key)}</span>
+                <strong className={clsx('mono', isReferenceKey(entry.key) && 'reference-text')}>
+                  {formatSummaryValue(document, entry.key, entry.currentValue)}
+                </strong>
               </div>
             ))}
           </div>
@@ -157,7 +143,7 @@ export function SectionDetail({
 
           {activeTab === 'fields' && (
             <section className="field-table-panel">
-              <div className="panel-title">
+              <div className="panel-title compact-panel-title">
                 <div>
                   <p>字段编辑</p>
                   <strong>{section.entries.length} 个字段</strong>
@@ -171,12 +157,11 @@ export function SectionDetail({
                 <table className="field-table">
                   <thead>
                     <tr>
-                      <th>中文字段名</th>
-                      <th>Key</th>
+                      <th>字段</th>
                       <th>当前值</th>
-                      <th>原始值</th>
-                      <th>说明</th>
-                      <th>强弱</th>
+                      <th className="original-value-cell">原始值</th>
+                      <th>状态</th>
+                      <th className="compact-strength">强弱</th>
                       <th>风险</th>
                       <th>操作</th>
                     </tr>
@@ -187,6 +172,7 @@ export function SectionDetail({
                         key={entry.id}
                         document={document}
                         entry={entry}
+                        selected={focusedEntry?.id === entry.id}
                         onFocus={() => onFocusEntry(entry)}
                         onChange={(value) => onUpdateEntry(entry.id, value)}
                         onRevert={() => onRevertEntry(entry.id)}
@@ -279,4 +265,12 @@ export function SectionDetail({
       </div>
     </section>
   )
+}
+
+function formatSummaryValue(document: IniDocument, key: string, value?: string) {
+  if (!value) return '空值'
+  if (!isReferenceKey(key)) return value
+  return splitTargets(value)
+    .map((target) => `${target} / ${getReferenceDisplayLabel(document, target)}`)
+    .join(', ')
 }
